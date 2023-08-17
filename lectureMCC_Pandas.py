@@ -17,6 +17,7 @@ class LectureMccCuve():
         self.dictMCC = {}
         print('self.mccFile : ', self.mccFile)
 
+
         self.getValues(self.mccFile)
         self.listeCle = list(self.dictMCC.keys())
 
@@ -28,6 +29,7 @@ class LectureMccCuve():
                 searchFieldInPlane = re.search("^\t\tFIELD_INPLANE=(\d+\.\d+)$", line_striped)
                 searchFieldCrossPlane = re.search("^\t\tFIELD_CROSSPLANE=(\d+\.\d+)$", line_striped)
                 searchDepth = re.search("SCAN_DEPTH=(\d+\.\d+)", line_striped)
+                searchSSD = re.search('SSD=(\d+\.\d+)', line_striped)
 
                 if re.search("SCAN_CURVETYPE=(\w+)", line_striped):
                     self.scanCurve = searchScanCurve.group(1)
@@ -41,12 +43,15 @@ class LectureMccCuve():
                 if re.search("SCAN_DEPTH=(\d+\.\d+)", line_striped):
                     self.depth = searchDepth.group(1)
 
+                if re.search('SSD=(\d+\.\d+)', line_striped):
+                    self.SSD = searchSSD.group(1)
+
                 if "BEGIN_DATA" in line_striped:
                     self.line_in_measurement = True
                     if self.depth:
-                        self.key = str(self.scanCurve) + str(' Field Size = ') + str(self.fieldInPlane) + str(' ') + str(self.fieldCrossPlane) + str(' , depth = ') + str(self.depth)
+                        self.key = str(self.scanCurve) + str(' Field Size = ') + str(self.fieldInPlane) + str(' ') + str(self.fieldCrossPlane) + str(' , depth = ') + str(self.depth) + str(' , SSD = ') + str(self.SSD)
                     else:
-                        self.key = str(self.scanCurve) + str(' Field Size = ') + str(self.fieldInPlane) + str(' ') + str(self.fieldCrossPlane)
+                        self.key = str(self.scanCurve) + str(' Field Size = ') + str(self.fieldInPlane) + str(' ') + str(self.fieldCrossPlane) + str(' , SSD = ') + str(self.SSD)
 
                 elif "END_DATA" in line_striped:
                     data = {'position': self.positions, 'value': self.values}
