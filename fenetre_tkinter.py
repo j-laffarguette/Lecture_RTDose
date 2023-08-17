@@ -14,8 +14,8 @@ from lectureMCC_Pandas import LectureMccCuve
 from lecture_Dicom import Lecture_Dicom
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
+import re
 import numpy as np
 from echantillonnage_DoseMesure import EchantillonnageDoseMesure
 from calculGamma import CalculGamma
@@ -72,6 +72,17 @@ class SelectFiles(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
+        self.field_size_x = None
+        self.field_size_y = None
+        self.depth = None
+        self.curve_type = None
+        self.energie_mcc = None
+        self.mppg = None
+        self.dsp = None
+        self.ssd = None
+        self.energie = None
+
+
         self.rtdose_a_garder = None
         self.mcc_a_garder = None
         self.mccDejaTrace = False
@@ -81,6 +92,10 @@ class SelectFiles(tk.Tk):
         self.dicomSelected = None
 
 
+
+
+
+
         self.ax_1 = None
         self.echantillonnageMCC = None
         self.objPlan = None
@@ -88,6 +103,7 @@ class SelectFiles(tk.Tk):
         self.filenameRTDose = None
         self.clear = False
         self.mcc_item = ' '
+
 
         ### définition des frames
         self.frameDicomGeneral = Frame(self, highlightbackground="gray", highlightthickness=1)
@@ -167,6 +183,8 @@ class SelectFiles(tk.Tk):
         self.entryTetePied.grid(row=2, column=1)
 
         self.valeurOffsetAntPost = tk.IntVar()
+
+
         self.valeurOffsetAntPost.set(0)
         self.entryAntPost = tk.Entry(self.sousFrameDicomOffset, textvariable=self.valeurOffsetAntPost, width=10)
         self.entryAntPost.grid(row=2, column=2)
@@ -289,9 +307,23 @@ class SelectFiles(tk.Tk):
             return
 
         filetypes = [('dicom files', '.dcm')]
+
+        if self.mppg is not None and self.energie is not None :
+            initial_dir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - ' \
+                          r'Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS\MPPG %s\%s_%s' % (self.mppg,self.mppg,
+                                                                                                self.energie)
+
+        else:
+            initial_dir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - ' \
+                          r'Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS'
+
+        print(initial_dir)
         self.filenameRTDose = fd.askopenfilename(title='Selectionner RTDose',
-                                                 initialdir=r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS',
+                                                 initialdir=initial_dir,
                                                  filetypes=filetypes)
+
+
+
 
         ### Définition du champs qui affiche le chemin du rtplan
         self.afficherCheminRTDOSE_Ouvert = tk.Label(self.sousFrameAffichageFichierOuvert, text=self.filenameRTDose)
@@ -366,9 +398,22 @@ class SelectFiles(tk.Tk):
         en paramètre le fichier dicom.
         """
         filetypes = [('dicom files', '.dcm')]
+        
+        if self.mppg is not None and self.energie is not None :
+            initial_dir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS\MPPG %s\%s_%s' % (self.mppg,self.mppg, self.energie)
+
+        else:
+            initial_dir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS'
+
+
+        print(initial_dir)
         filename = fd.askopenfilename(title='Selectionner RTPlan',
-                                      initialdir=r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS',
+                                      initialdir=initial_dir,
                                       filetypes=filetypes)
+
+
+
+
 
         ### Définition du champs qui affiche le chemin du rtplan
         # self.afficherCheminRTPLAN_Ouvert = tk.Label(self.sousFrameAffichageFichierOuvert, text =filename)
@@ -384,11 +429,37 @@ class SelectFiles(tk.Tk):
         dans une combobox
         """
         filetypes = [('mcc files', '.mcc')]
+
+        if self.mppg is not None and self.energie is not None :
+            initialdir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - ' \
+                         r'Mesures\02 Relatif - Model TPS\04 TPS\01 Mesures cuve\MPPG %s' % (self.mppg)
+        else:
+            initialdir = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\01 Mesures cuve'
+
         self.filenameMCC = fd.askopenfilename(title='Selectionner MCC',
-                                              initialdir=r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 '
-                                                         r'Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 '
-                                                         r'TPS\01 Mesures cuve',
+                                              initialdir=initialdir,
                                               filetypes=filetypes)
+
+
+        # Utilisation d'expressions régulières pour extraire les valeurs recherchées
+        mppg_match = re.search(r"/MPPG (\d+\.\d+)", self.filenameMCC)
+        dsp_match = re.search(r"/DSP (\d+)", self.filenameMCC)
+        energie_match = re.search(r"/(X\d+(?: FFF)?)\.mcc", self.filenameMCC)
+        if energie_match is None:
+            energie_match = re.search(r"/(X\d+(?: FFF)?)",  self.filenameMCC)
+
+        if mppg_match:
+            self.mppg = mppg_match.group(1)
+            print("mppg =", self.mppg)
+        if dsp_match:
+            self.dsp = dsp_match.group(1)
+            print("dsp =", self.dsp)
+        if energie_match:
+            self.energie_mcc = energie_match.group(1)
+            self.energie = self.energie_mcc.replace("X06", "X6").replace("X6 FFF","X6FFF").replace("X06 FFF", "X6FFF").replace("X6 FFF", "X6FFF").replace("X10 FFF", "X10FFF")
+
+            print("energie =", self.energie)
+
 
         ### Définition du champs qui affiche le chemin du mcc
         # self.afficherCheminMCC_Ouvert = tk.Label(self.frameMCCGeneral, text = self.filenameMCC)
@@ -417,11 +488,54 @@ class SelectFiles(tk.Tk):
         # self.combobox.grid(row=1, column=0)
         self.combobox.bind('<<ComboboxSelected>>', self.choixItemCombobox)
 
+
+
     def choixItemCombobox(self, event):
         ### la variable self.itemSelected contient l'item de la combobox sélectionné
         self.itemSelected = self.combobox.get()
 
         print('a : ', self.itemSelected)
+
+
+        # On récupères les proprioétés de la mesure sélectionnée
+        # Utilisation d'expressions régulières pour extraire les valeurs recherchées
+        curve_type_match = re.search(r'(INPLANE_PROFILE|CROSSPLANE_PROFILE|PDD)', self.itemSelected)
+        field_size_match = re.search(r'Field Size = (\d+\.\d+) (\d+\.\d+)', self.itemSelected)
+        depth_match = re.search(r'depth = (\d+\.\d+)', self.itemSelected)
+        ssd_match = re.search(r'SSD = (\d+\.\d+)', self.itemSelected)
+
+        if curve_type_match :
+            self.curve_type = curve_type_match.group(1)
+
+        if field_size_match :
+            self.field_size_x = float(field_size_match.group(1))
+            self.field_size_y = float(field_size_match.group(2))
+        if depth_match :
+            self.depth = float(depth_match.group(1))
+
+        if ssd_match :
+            self.ssd = float(ssd_match.group(1))
+
+
+        print("curve_type =", self.curve_type)
+        print("Field size [Y,X] =", [self.field_size_y, self.field_size_x])
+        print("depth =", self.depth)
+        print("ssd =", self.ssd)
+
+        # Initialisation des valeurs des champs de texte
+        self.valeurOffsetAntPost.set(1)  # Change la valeur de la case à cocher à "cochée"
+        self.entryAntPost.delete(0, tk.END)  # Efface le contenu actuel de la zone de texte
+        nouvelle_valeur = round(1000 - (self.depth+self.ssd),1)
+        self.entryAntPost.insert(0,nouvelle_valeur)
+
+        if self.curve_type == 'PDD':
+            self.valeurRadioButtonPDD_Profil.set(1)
+        elif self.curve_type == 'INPLANE_PROFILE':
+            self.valeurRadioButtonPDD_Profil.set(3)
+        elif self.curve_type == 'CROSSPLANE_PROFILE':
+            self.valeurRadioButtonPDD_Profil.set(2)
+
+
 
 
         ### on exécute la fonction miseEnFormeDesDonneesDuMCC afin de mettre en forme le PDD
@@ -600,6 +714,6 @@ class SelectFiles(tk.Tk):
     #     self.canvas.get_tk_widget().grid(row=0, column=0, columnspan=3)
 
     def enregistrementPlot(self):
-        folder = r'C:\Users\M11344\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS'
+        folder = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS\MPPG %s\%s_%s' % (self.mppg,self.mppg,self.energie)
         # folder = r'G:\CAYEZ\temp\dose'
         self.fig.savefig(folder + '\\' + self.filenameMCC.split('/')[-1] + '  ' + self.itemSelected + '.png', dpi=600)
