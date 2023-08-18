@@ -72,6 +72,7 @@ class SelectFiles(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
+        self.offAxisInPlane = 0
         self.field_size_x = None
         self.field_size_y = None
         self.depth = None
@@ -503,6 +504,7 @@ class SelectFiles(tk.Tk):
         field_size_match = re.search(r'Field Size = (\d+\.\d+) (\d+\.\d+)', self.itemSelected)
         depth_match = re.search(r'depth = (\d+\.\d+)', self.itemSelected)
         ssd_match = re.search(r'SSD = (\d+\.\d+)', self.itemSelected)
+        offAxisInPlane_match = re.search(r'offAxisInPlane = (\d+\.\d+)', self.itemSelected)
 
         if curve_type_match :
             self.curve_type = curve_type_match.group(1)
@@ -516,6 +518,8 @@ class SelectFiles(tk.Tk):
         if ssd_match :
             self.ssd = float(ssd_match.group(1))
 
+        if offAxisInPlane_match :
+            self.offAxisInPlane = float(offAxisInPlane_match.group(1))
 
         print("curve_type =", self.curve_type)
         print("Field size [Y,X] =", [self.field_size_y, self.field_size_x])
@@ -525,15 +529,25 @@ class SelectFiles(tk.Tk):
         # Initialisation des valeurs des champs de texte
         self.valeurOffsetAntPost.set(1)  # Change la valeur de la case à cocher à "cochée"
         self.entryAntPost.delete(0, tk.END)  # Efface le contenu actuel de la zone de texte
-        nouvelle_valeur = round(1000 - (self.depth+self.ssd),1)
+
+        nouvelle_valeur = round( (self.depth+self.ssd)-1000,1)
         self.entryAntPost.insert(0,nouvelle_valeur)
+
+        self.entryTetePied.delete(0, tk.END)
+        self.entryTetePied.insert(0, 0)
 
         if self.curve_type == 'PDD':
             self.valeurRadioButtonPDD_Profil.set(1)
         elif self.curve_type == 'INPLANE_PROFILE':
             self.valeurRadioButtonPDD_Profil.set(3)
+
+
         elif self.curve_type == 'CROSSPLANE_PROFILE':
             self.valeurRadioButtonPDD_Profil.set(2)
+
+            # On ajoute l'offset inplane qui si la courbe mesurée est en crossplane
+            self.entryTetePied.delete(0, tk.END)
+            self.entryTetePied.insert(0, self.offAxisInPlane)
 
 
 
@@ -629,6 +643,7 @@ class SelectFiles(tk.Tk):
         self.ax_1.set_ylim([0, max(arrayMCC_Ou_Dose[:, 1]) * 1.1])
         self.ax_1.grid(True)
 
+
         if self.echantillonnageMCC:
             self.ax_1.set_title('mcc path : ' + self.filenameMCC.split('/')[-1] + '\n' +
                                 'mesure analysee : ' + self.itemSelected,
@@ -646,7 +661,7 @@ class SelectFiles(tk.Tk):
             color = 'blue'
 
         self.ax_1.plot(arrayMCC_Ou_Dose[:, 0], arrayMCC_Ou_Dose[:, 1], label=label, color=color)
-
+        self.ax_1.legend(loc='best')
         self.canvas.draw()
 
 
@@ -688,6 +703,13 @@ class SelectFiles(tk.Tk):
             self.draw_plot(self.rtdose_a_garder, label= 'RTDose')
             self.mccDejaTrace = True
 
+        elif label == 'RTDose' and self.RTDoseDejaTrace:
+            print('RTDose sélectionné, RTDose déjà tracé')
+            self.update_plot()
+            self.rtdose_a_garder = arrayMCC_Ou_Dose
+            self.draw_plot(arrayMCC_Ou_Dose, label, xflip)
+            self.draw_plot(self.mcc_a_garder, label= 'MCC')
+            self.RTDoseDejaTrace = True
 
 
 
