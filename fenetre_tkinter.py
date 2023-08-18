@@ -498,13 +498,15 @@ class SelectFiles(tk.Tk):
         print('a : ', self.itemSelected)
 
 
-        # On récupères les proprioétés de la mesure sélectionnée
+        # On récupères les propriétés de la mesure sélectionnée
         # Utilisation d'expressions régulières pour extraire les valeurs recherchées
         curve_type_match = re.search(r'(INPLANE_PROFILE|CROSSPLANE_PROFILE|PDD)', self.itemSelected)
         field_size_match = re.search(r'Field Size = (\d+\.\d+) (\d+\.\d+)', self.itemSelected)
         depth_match = re.search(r'depth = (\d+\.\d+)', self.itemSelected)
         ssd_match = re.search(r'SSD = (\d+\.\d+)', self.itemSelected)
-        offAxisInPlane_match = re.search(r'offAxisInPlane = (\d+\.\d+)', self.itemSelected)
+        offAxisInPlane_match = re.search(r'offAxisInPlane = (-?\d+\.\d+)', self.itemSelected)
+        collOffsetCrossPlane_match = re.search(r'collOffsetCrossPlane = (-?\d+\.\d+)', self.itemSelected)
+        collOffsetInPlane_match = re.search(r'collOffsetInPlane = (-?\d+\.\d+)', self.itemSelected)
 
         if curve_type_match :
             self.curve_type = curve_type_match.group(1)
@@ -521,33 +523,73 @@ class SelectFiles(tk.Tk):
         if offAxisInPlane_match :
             self.offAxisInPlane = float(offAxisInPlane_match.group(1))
 
+        # Valeur de décalage en crossplane (pour MPPG 7.2)
+        try  :
+            self.collOffsetCrossPlane = float(collOffsetCrossPlane_match.group(1))
+        except AttributeError :
+            self.collOffsetCrossPlane = 0
+
+        # Valeur de décalage en inplane (pour MPPG 7.2)
+        try:
+            self.collOffsetInPlane = float(collOffsetInPlane_match.group(1))
+        except AttributeError:
+            self.collOffsetInPlane = 0
+
+        print('-------------------------------------------')
         print("curve_type =", self.curve_type)
         print("Field size [Y,X] =", [self.field_size_y, self.field_size_x])
         print("depth =", self.depth)
         print("ssd =", self.ssd)
+        print("offAxisInPlane =", self.offAxisInPlane)
+        print("collOffsetCrossPlane =", self.collOffsetCrossPlane)
+        print("collOffsetInPlane =", self.collOffsetInPlane)
+        print('\n')
 
-        # Initialisation des valeurs des champs de texte
-        self.valeurOffsetAntPost.set(1)  # Change la valeur de la case à cocher à "cochée"
+
+
+        # ---------------------------------------------------------------------------------------------
+        # Initialisation des valeurs de décalage en G/D, Ant/Post et Tête/Pied
+        # ---------------------------------------------------------------------------------------------
+
+        # 1. Ant/Post
+        self.valeurOffsetAntPost.set(1)  # Change la valeur de la case à cocher à "cochée": todo: voir si cette ligne est utile
         self.entryAntPost.delete(0, tk.END)  # Efface le contenu actuel de la zone de texte
-
         nouvelle_valeur = round( (self.depth+self.ssd)-1000,1)
         self.entryAntPost.insert(0,nouvelle_valeur)
 
-        self.entryTetePied.delete(0, tk.END)
-        self.entryTetePied.insert(0, 0)
+
 
         if self.curve_type == 'PDD':
             self.valeurRadioButtonPDD_Profil.set(1)
+
         elif self.curve_type == 'INPLANE_PROFILE':
             self.valeurRadioButtonPDD_Profil.set(3)
+
+            # On modifie G/D
+            delta1 = self.collOffsetCrossPlane*(self.depth+self.ssd)/1000 # Théorème de Thalès
+
+
+            self.entryGaucheDroite.delete(0, tk.END)
+            new_val_gauche_droite = delta1
+            self.entryGaucheDroite.insert(0, new_val_gauche_droite)
+
+            # on remet tete pieds à 0
+            self.entryTetePied.delete(0, tk.END)
+            self.entryTetePied.insert(0, 0)
 
 
         elif self.curve_type == 'CROSSPLANE_PROFILE':
             self.valeurRadioButtonPDD_Profil.set(2)
 
-            # On ajoute l'offset inplane qui si la courbe mesurée est en crossplane
+            # On modifie tete pieds
+            delta2 = self.collOffsetInPlane*(self.depth+self.ssd)/1000 # Théorème de Thalès
             self.entryTetePied.delete(0, tk.END)
-            self.entryTetePied.insert(0, self.offAxisInPlane)
+            new_val_tete_pied = delta2
+            self.entryTetePied.insert(0, -delta2 + self.offAxisInPlane)  #ATTENTION !!!!! Pas sûr du signe - ici
+
+            # on remet gauche droite à 0
+            self.entryGaucheDroite.delete(0, tk.END)
+            self.entryGaucheDroite.insert(0, 0)
 
 
 
