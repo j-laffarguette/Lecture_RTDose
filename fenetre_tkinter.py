@@ -689,7 +689,7 @@ class SelectFiles(tk.Tk):
         if self.echantillonnageMCC:
             self.ax_1.set_title('mcc path : ' + self.filenameMCC.split('/')[-1] + '\n' +
                                 'mesure analysee : ' + self.itemSelected,
-                                loc='center',
+                                loc='center', size = 10,
                                 wrap=True)
             self.ax_1.set_xlim([min(self.donneesDuDataFrame[:, 0]), max(self.donneesDuDataFrame[:, 0])])
         else:
@@ -780,4 +780,10 @@ class SelectFiles(tk.Tk):
     def enregistrementPlot(self):
         folder = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS\MPPG %s\%s_%s' % (self.mppg,self.mppg,self.energie)
         # folder = r'G:\CAYEZ\temp\dose'
-        self.fig.savefig(folder + '\\' + self.filenameMCC.split('/')[-1] + '  ' + self.itemSelected + '.png', dpi=600)
+        print(r'folder : ', folder)
+        try:
+            self.fig.savefig(folder + '\\' + self.filenameMCC.split('/')[-1] + '  ' + self.itemSelected + '.png', dpi=600)
+        except:
+            energie = self.energie+'FFF'
+            folder = r'C:\Users\M11142\OneDrive - Centre Oscar Lambret\Truebeam\01 Acceptance - Commissioning - Mesures\02 Relatif - Model TPS\04 TPS\02 RT PLANS\MPPG %s\%s_%s' % (self.mppg,self.mppg,energie)
+            self.fig.savefig(folder + '\\' + self.filenameMCC.split('/')[-1] + '  ' + self.itemSelected + '.png', dpi=600)
