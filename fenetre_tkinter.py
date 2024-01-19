@@ -585,7 +585,7 @@ class SelectFiles(tk.Tk):
             delta2 = self.collOffsetInPlane*(self.depth+self.ssd)/1000 # Théorème de Thalès
             self.entryTetePied.delete(0, tk.END)
             new_val_tete_pied = delta2
-            self.entryTetePied.insert(0, -delta2 + self.offAxisInPlane)  #ATTENTION !!!!! Pas sûr du signe - ici
+            self.entryTetePied.insert(0, -delta2 - self.offAxisInPlane)  #ATTENTION !!!!! Pas sûr du signe - ici
 
             # on remet gauche droite à 0
             self.entryGaucheDroite.delete(0, tk.END)
